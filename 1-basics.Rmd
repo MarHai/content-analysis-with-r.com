@@ -1,0 +1,278 @@
+---
+title: "Automated Content Analysis with R"
+author: "Cornelius Puschmann & Mario Haim"
+subtitle: "Basics"
+---
+
+The aim of this first chapter is to provide an introduction to [quanteda](https://quanteda.io/), which we will use extensively in this course to analyze (textual) social-media content. In doing so, we will also cover basic concepts relevant in quantitative content analysis. In addition to quanteda, several other R libraries are used in this class, such as for [supervised machine learning](https://en.wikipedia.org/wiki/Supervised_learning). The packages of the [tidyverse](https://www.tidyverse.org/) (especially ggplot, dplyr, and stringr) are also relevant in practically every unit, as they greatly improve plotting, word processing, and data management over the basic R functions.
+
+The basis of the analysis in this first section are the popular stories of Sherlock Holmes. The Sherlock Holmes corpus consists of twelve novels which are summarized in the volume *The Adventures of Sherlock Holmes* published in 1892 and which can be downloaded under the public domain from the [Internet Archive](https://archive.org/). The version used for this introduction was first taken from the Internet Archive and then divided into twelve individual files. Of course, the methods presented here will later be applied to social-media data -- the example only serves to slowly get used to quanteda and the basics of computer-aided content analysis.
+
+## Installing/loading R libraries
+
+First, the necessary libraries are installed (if not already available) and then loaded. In addition, the theme setting for the package ggplot is set in preparation (this makes for nicer plots). We will repeat this step at the beginning of each chapter. In some sections, additional packages will be used, for example for an extended color palette ([RColorBrewer](https://cran.r-project.org/package=RColorBrewer)), word clouds ([wordcloud](https://cran.r-project.org/package=wordcloud)), or to parse URLs ([urltools](https://cran.r-project.org/package=urltools)).
+
+```{r Installation and loading of required R libraries, message = FALSE}
+if(!require("quanteda")) {install.packages("quanteda"); library("quanteda")}
+if(!require("readtext")) {install.packages("readtext"); library("readtext")}
+if(!require("tidyverse")) {install.packages("tidyverse"); library("tidyverse")}
+if(!require("RColorBrewer")) {install.packages("RColorBrewer"); library("RColorBrewer")}
+theme_set(theme_bw())
+```
+
+## Reading data
+
+After all the necessary packages have been loaded, we can now import the Sherlock Holmes novels into a quanteda corpus. The [readtext](https://www.rdocumentation.org/packages/readtext) function from the package of the same name is used to import plaintext files, which can be used to successfully import a number of file formats (including TXT, PDF, and Word). Basically plaintext data (usually ending in ".txt") and data in table form (e.g. in CSV format or as an Excel file) can be read by readtext without any major problems, but when importing, you have to specify how the individual data records are separated from each other (for plaintext files, for example, where not 1 file equals 1 text, which can be the case for exports from Lexis Nexis) and which fields contain the primary and meta data (for tables). A good introduction to the readtext package can be found [here](https://cran.r-project.org/web/packages/readtext/vignettes/readtext_vignette.html).
+
+In this case, each file corresponds to one text, which makes the import very easy. We remove the ".txt" extension from the document name so that it can be used later in plot labels. We then create a corpus, which is the essential step to proceed further. Finally, the variable *corpus* is called, which returns the important key varialbe document number along other so-called "docvars" (metadata for the texts in the corpus). 
+
+```{r Read data and generate corpus}
+sherlock <- readtext("data/sherlock/novels/[0-9]*.txt") 
+sherlock$doc_id <- str_sub(sherlock$doc_id, start = 4, end = -5)
+my.corpus <- corpus(sherlock)
+docvars(my.corpus, "Textno") <- sprintf("%02d", 1:ndoc(my.corpus))
+my.corpus
+```
+
+Similarly, most analyses with quanteda consist of these three steps:
+
+1. Import raw textual data (from files or an API)
+2. Build a corpus (text + metadata)
+3. Calculate a document feature matrix (DFM)
+
+Along the way we will also explore a few features that are helpful for cleaning, filtering, and pre-processing corpus data.
+
+Now that we have read in the data stored in 12 files (one per novel) and generated a metadata variable that stores the index number of the respective text, we can continue to whatever analyses we fancy. Like, now, we will proceed to generating some corpus statistics. 
+
+**Importantly**, in the following chapters, we sometimes build on already prepared corpora. That is, instead of importing raw TXT files and generating the corpus format, we tend to directly import the corpus. This is to save computational ressources and hard-disk space.
+
+
+## Generating corpus statistics
+
+After having imported the data and created a corpus, we now generate a set of basic corpus statistics. The [ndoc](https://quanteda.io/reference/ndoc.html), [ntoken](https://quanteda.io/reference/ntoken.html), [ntype](https://quanteda.io/reference/ntoken.html), and [nsentence](https://quanteda.io/reference/nsentence.html) functions output the number of documents, tokens (the number of words), types (the number of unique words), and sentences in a corpus. These statistics can also be conveniently created along with document-level metadata using the [summary](https://www.rdocumentation.org/packages/quanteda/versions/1.3.0/topics/summary.corpus) function. While we now create an own variable for these statistics, for most corpora used in our examples, such a data frame with statistics for each text is already included. However, this is not necessary. If you want to access or change corpus metadata, you can do so at any time using the [docvars](https://quanteda.io/reference/docvars.html) command.
+
+Technically speaking, the function used here is called *summary.corpus* and is a variant of the basic function *summary*, which is adapted to corpus objects and is also used in R elsewhere. The [reorder](https://www.rdocumentation.org/packages/stats/versions/3.3/topics/reorder.default) command is used to sort the texts by their order in *The Adentures of Sherlock Holmes* instead of alphabetically by title.
+
+```{r Generate corpus statistics}
+my.corpus.stats <- summary(my.corpus)
+my.corpus.stats$Text <- reorder(my.corpus.stats$Text, 1:ndoc(my.corpus), order = T)
+my.corpus.stats
+```
+
+The content of the variable *my.corpus.stats* can of course also be plotted visually to give a clear impression of the corpus texture. The following lines return the number of tokens (running words), the number of types (unique words), and sentences per novel. Finally, the relationship between types and tokens (or the so-called [Type-Token-Ratio](https://en.wikipedia.org/wiki/Lexical_diversity)) is plotted. 
+
+Basis of such plots are almost always data frames (essentially the R equivalent to tables), which contain information about corpora, texts, words, topics, and so forth. In the remainder of this introduction, we won't go into detail how the plots are constructed, but most of the data can be displayed with the R-internal function [plot()](https://www.rdocumentation.org/packages/graphics/versions/3.5.0/topics/plot). A helpful introduction to plotting with ggplot2 can also be found [here](https://ggplot2.tidyverse.org/index.html). Many of the plots presented here also come directly from quanteda (starting with textplot_).
+
+```{r Plot tokens, types and sentences per novel}
+ggplot(my.corpus.stats, aes(Text, Tokens, group = 1)) + geom_line() + geom_point() + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + ggtitle("Tokens per novel") + xlab("") + ylab("")
+ggplot(my.corpus.stats, aes(Text, Types, group = 1)) + geom_line() + geom_point() + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + ggtitle("Types per novel") + xlab("") + ylab("")
+ggplot(my.corpus.stats, aes(Text, Sentences, group = 1)) + geom_line() + geom_point() + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + ggtitle("Sentences per novel") + xlab("") + ylab("")
+ggplot(my.corpus.stats, aes(Tokens, Types, group = 1, label = Textno)) + geom_smooth(method = "lm", se = FALSE) + geom_text(check_overlap = T) + ggtitle("Type-Token-Ratio (TTR) per novel")
+```
+
+These charts are not very informative at first glance. They merely prove that the stories 'A Case of Identity' and (to a lesser extent) 'The Five Orange Pips' are significantly shorter than the other texts, which is reflected on all three levels (tokens, types, sentences). However, the type-token relation is somewhat more interesting: while three novels (i.e., numbers 3, 11, and 12) each have a TTR below average, another four are above the linear relation (1, 5, 6, and 8), with the remaining six novels corresponding fairly exact to the average. Thereby, the TTR can be used to draw conclusions about information density -- we'll come back to that later. 
+
+
+## Working with corpora
+
+Corpora in quanteda are very easy to create, reshape, and enrich with additional metadata. Metadata can in turn be used to filter the corpus according to specific criteria. The following call extracts the first 500 words of the first novel.
+
+```{r Extracting substrings}
+str_sub(my.corpus[1], start = 1, end = 500)
+```
+
+Each text can therefore be called up and also changed on the basis of its indexing (e.g. my.corpus[1] for the first text). The same works with the function [texts](https://quanteda.io/reference/texts.html) -- the way to get the index is simply the short form of texts(my.corpus)[1]. 
+
+By means of [corpus_reshape](https://quanteda.io/reference/corpus_reshape.html), a corpus can be transformed in such a way that each sentence results in its own document. Alternative arguments are "paragraphs" and "documents" (so a sentence corpus can be restored to its initial state). The creation of sentence corpora is of interest for sentiment analysis and supervised machine learning. 
+
+The label of the example consists of the variable *docname* and an appended number (1 for the first sentence). 
+
+```{r Reshaping corpus to sentences}
+my.corpus.sentences <- corpus_reshape(my.corpus, to = "sentences")
+my.corpus.sentences[200]
+```
+
+With [corpus_sample()](https://quanteda.io/reference/corpus_sample.html), a random sample may be drawn from a corpus. We apply the function here to the sentence corpus to retrieve one random sentence. 
+
+```{r Sampling a random sentence}
+example.sentence <- corpus_sample(my.corpus.sentences, size = 1)
+example.sentence[1]
+```
+
+Using [corpus_subset](https://quanteda.io/reference/corpus_subset.html), a corpus can finally be filtered by metadata. Here, this is done using the newly created binary variable *LongSentence*, which is TRUE if a set contains >= 25 tokens). In this way a partial corpus can be formed in which only longer sentences are contained. The example is only intended to illustrate that using the functions provided by quanteda, numerous steps can be taken to clean up our corpora. 
+
+```{r Adding new docvars}
+docvars(my.corpus.sentences, "CharacterCount") <- ntoken(my.corpus.sentences)
+docvars(my.corpus.sentences, "LongSentence") <- ntoken(my.corpus.sentences) >= 25
+my.corpus.sentences_long <- corpus_subset(my.corpus.sentences, LongSentence == TRUE)
+my.corpus.sentences_long[1:3]
+```
+
+One of quanteda's greatest strengths is its ability to work with existing metadata variables (e.g. author, source, category, timestamp) and metadata variables created in-house (e.g. topic, sentiment). We will make great use of this feature in the following we often chapters, where we filter or group on the basis of metadata. Finally, corpora can also be split according to certain criteria using [corpus_segment()](https://quanteda.io/reference/corpus_segment.html).
+
+
+## Tokenization 
+
+Tokenization refers to the splitting of a text into running words or so-called N-grams (i.e., sequences of several words in succession). The function [tokens](https://quanteda.io/reference/tokens.html) realizes the tokenization of a corpus in quanteda. In addition, *tokens* also understands countless arguments for removing certain features.
+
+```{r Simple tokenization}
+my.tokens <- tokens(my.corpus) %>% as.list()
+head(my.tokens$`A Scandal in Bohemia`, 12)
+```
+
+Using the *tokens* function, the text can also be split into N-grams (the multi-word sequences, each consisting of *N* words) using the argument *ngrams*. In the following example, bigrams (or 2-grams, for that matter, although nobody refers to them that way) from the beginning of the first text are displayed, and then all sequences of one, two, or three terms are extracted (by using [head](https://www.rdocumentation.org/packages/utils/versions/3.5.1/topics/head) we see only trigrams, but there are also shorter sequences). 
+
+```{r N-gram extraction}
+my.tokens <- tokens(my.corpus, ngrams = 3) %>% as.list()
+head(my.tokens$`A Scandal in Bohemia`)
+```
+
+It is also helpful to be able to remove or retain certain terms during tokenization. 
+
+```{r Removing or retaining tokens}
+my.tokens <- tokens(my.corpus)
+tokens.retained <- tokens_select(my.tokens, c("holmes", "watson")) %>% as.list()
+head(tokens.retained$`A Scandal in Bohemia`)
+tokens.removed <- tokens_remove(my.tokens, c("Sherlock", "in", "is", "the")) %>% as.list()
+head(tokens.removed$`A Scandal in Bohemia`)
+```
+
+As already mentioned, the *tokens* function accepts a number of arguments that can be used to exclude or retain whole classes of strings (numbers, punctuation, symbols ...). First, numbers, punctuation and symbols will be removed, then [tokens_tolower](https://quanteda.io/reference/tokens_tolower.html) will be used to convert all words to lower case and then the words "sherlock" and "holmes" will be removed, as well as a number of english [stop words](https://en.wikipedia.org/wiki/Stop_words).  
+
+```{r Additional function arguments}
+my.tokens <- tokens(my.corpus, remove_numbers = TRUE, remove_punct = TRUE, remove_symbols = TRUE) %>%
+  tokens_tolower() %>% 
+  tokens_remove(c(stopwords("english"), "sherlock", "holmes")) %>% 
+  as.list()
+head(my.tokens$`A Scandal in Bohemia`)
+```
+
+The result is very similar to the kind of data often used in procedures such as the use of lexicons, supervised machine learning and the calculation of topic models. The removal of stop words and other steps cause syntactic information to be lost (e.g., it is no longer possible to understand who is doing what with whom, or how the text is structured argumentatively or narratively). However, this information is not necessarily relevant in the [bag-of-words approach](https://en.wikipedia.org/wiki/Bag-of-words_model), which is the most commonly used approach in automated content analysis.
+
+Although the steps described in this section are useful in individual cases, they are practically never applied in the following chapters because the data are already available there as quanteda corpora where such preprocessing has already been applied. The tokenization is also implicitly applied as soon as a document feature matrix (DFM, see below) is created.
+
+
+## Document Feature Matrices (DFMs)
+
+We now come to a central data structure of quanteda, which, in contrast to the previously introduced functions, occurs in practically every project -- the Document Feature Matrix (DFM). A DFM is a table, which depicts texts as rows and individual words as columns; in each cell, then, the frequencies of a given word in a given text is noted. Usually, the DFM (or several ones, if necessary) is (are) calculated directly after a corpus has been created. Consequently, information about where a word occurs in a text is lost (that's why it's referred to as [bag-of-words approach](https://en.wikipedia.org/wiki/Bag-of-words_model), where DFMs are *not-positional* in contrast to the actual corpus). Whenever we are interested in the relationship of words to texts (and vice versa), we calculate a DFM.
+
+```{r Creating a simple DFM}
+my.dfm <- dfm(my.corpus, remove_numbers = TRUE, remove_punct = TRUE, remove_symbols = TRUE, remove = stopwords("english"))
+my.dfm
+```
+
+Importantly, the [tokens()](https://quanteda.io/reference/tokens.html) function, which we are already familiar with, is implicitly used here to remove (or possibly retain) certain features. Many things work with DFMs just like they work when creating a corpus. For example, the functions [ndoc()](https://quanteda.io/reference/ndoc.html) and [nfeat()](https://quanteda.io/reference/ndoc.html) count documents and features (words, in our case).
+
+```{r Counting documents and features}
+ndoc(my.dfm)
+nfeat(my.dfm)
+```
+
+Using the functions [docnames()](https://quanteda.io/reference/docnames.html) and [featnames()](https://quanteda.io/reference/featnames.html), we can also display the names of the documents and features.
+
+```{r Showing documents and features}
+head(docnames(my.dfm))
+head(featnames(my.dfm), 50)
+```
+
+The tabular view best illustrates what a DFM actually does as a text-word matrix. Importantly, the reported *sparsity* of a DFM describes the proportion of empty cells (i.e., words that occur only in very few texts). As can easily be deduced, DFMs quickly become very large. Fortunately, quanteda takes advantage of a number of features from other packages that are invisible to the user to address this problem. 
+
+```{r Features and documents as a matrix}
+head(my.dfm, n = 12, nf = 10) # Features/texts as a matrix
+```
+
+At first glance, you will notice that the words "sherlock" and "holmes" are not very distinctive in all novels, which is why we might want to add them to the stop words for this corpus -- they simply do not provide much additional insight.
+
+Looking at the DFM sorted by prevalent features is usually more informative than inspecting the features in the order of their occurance.
+
+```{r Ordering the matrix by feature frequency}
+head(dfm_sort(my.dfm, decreasing = TRUE, margin = "both"), n = 12, nf = 10) 
+```
+
+The [topfeatures()](https://quanteda.io/reference/topfeatures.html) function counts features in the entire DFM. The function [textstat_frequency()](https://quanteda.io/reference/textstat_frequency.html) additionally supplies the rank, the number of documents in which the feature occurs (docfreq) as well as metadata, which was used for filtering during the count (textstat_frequncy is to be preferred to topfeatures).
+
+```{r Calculating word frequencies}
+topfeatures(my.dfm) # basic word frequencies
+word.frequencies <- textstat_frequency(my.dfm) # more elaborate frequencies
+head(word.frequencies)
+```
+
+
+## Working with DFMs
+
+As has already been indicated, DFMs can be easily sorted by document and feature frequencies using [dfm_sort](https://quanteda.io/reference/dfm_sort.html).
+
+```{r Sorting DFMs}
+head(dfm_sort(my.dfm, decreasing = TRUE, margin = "both"), n = 12, nf = 10) 
+```
+
+Furthermore, certain features of a DFM can be specifically selected using [dfm_select](https://quanteda.io/reference/dfm_select.html).
+
+```{r Filtering DFMs by a pattern}
+dfm_select(my.dfm, pattern = "lov*")
+```
+
+The function [dfm_wordstem()](https://quanteda.io/reference/dfm_wordstem.html) reduces words to their root form. This function currently exists in quanteda only for English and is not very reliable, which is well illustrated in the following issue ('holm' is not a root word). We will come back to language-specific information, though, in other chapters. 
+
+```{r Stemming DFMs}
+my.dfm.stemmed <- dfm_wordstem(my.dfm)
+topfeatures(my.dfm.stemmed)
+```
+
+As with word frequencies in corpora, the weighting of a DFM according to relative word frequencies and methods such as [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) often makes sense. The weighting of a DFM always works based on the word-text relation, which is why topfeatures() in combination with [dfm_weight()](https://quanteda.io/reference/dfm_weight.html) produces strange results. Relative frequencies and TF-IDF are only meaningful contrastively within the text in a corpus (here for 'A Scandal in Bohemia'), since for the whole corpus' relative frequency equals its absolute frequency.
+
+```{r Weighting DFMs}
+my.dfm.proportional <- dfm_weight(my.dfm, scheme = "propmax")
+convert(my.dfm.proportional, "data.frame")
+```
+
+In the second example, we see that 'A Scandal in Bohemia' has a slightly higher proportion of citations of the word 'holmes' than is the case in the whole corpus. A little more about that later.
+
+The weighting approaches Propmax and TF-IDF provide relevant word metrics, for example for the determination of stop words. Propmax scales the word frequency relative to the most frequent word (here 'holmes'). 
+
+```{r Applying propmax weighting to DFMs}
+my.dfm.propmax <- dfm_weight(my.dfm, scheme = "propmax")
+topfeatures(my.dfm.propmax[1,])
+```
+
+Functionally, TF-IDF and the Keyness approach (introduced later) are similar -- both find particularly distinctive terms.
+
+```{r Applying TF-IDF to DFMs}
+my.dfm.tfidf <- dfm_tfidf(my.dfm)
+topfeatures(my.dfm.tfidf)
+```
+
+Finally, you can create a reduced document feature matrix with [dfm_trim()](https://quanteda.io/reference/dfm_trim.html). This makes sense if one assumes, for example, that only terms that occur at least X times in the entire body play a role. A minimum number or maximum number of documents in which a term must or may occur can also be determined. Both filter options can also be used proportionally -- below, we first extract those features found in at least 11 novels, and then those in the 95th frequency percentile (i.e., the top 5% of all features).
+
+```{r Trimming DFMs}
+my.dfm.trim <- dfm_trim(my.dfm, min_docfreq = 11)
+head(my.dfm.trim, n = 12, nf = 10) 
+
+my.dfm.trim <- dfm_trim(my.dfm, min_termfreq = 0.95, termfreq_type = "quantile")
+head(my.dfm.trim, n = 12, nf = 10) 
+```
+
+
+## Visualizing DFMs
+
+DFMs can also be represented as a word cloud of the most common terms.
+
+```{r Word cloud by absolute word frequencies}
+textplot_wordcloud(my.dfm, min_size = 1, max_size = 5, max_words = 100)
+```
+
+The comparison is also more interesting than the presentation of the entire corpus. The following plot shows the most distinctive terms according to TF-IDF for four novels, where the color indicates the respective novel. The fact that the word size in the plot does not indicate the absolute frequency but the TF-IDF value makes such a plot useful for direct comparison.
+
+```{r Comparison word cloud per novel}
+textplot_wordcloud(my.dfm[1:4,], color = brewer.pal(4, "Set1"), min_size = 0.2, max_size = 4, max_words = 50, comparison = TRUE)
+```
+
+## Things to remember about quanteda basics
+
+The following characteristics of corpora and DFMs should be kept in mind:
+
+- a corpus consists of texts (or tweets, comments ...) and metadata
+- a corpus is positional, a DFM is non-positional
+- in most projects you want one corpus to contain all your data and generate many DFMs from that
+- the rows of a DFM can contain any unit on which you can aggregates documents
+- the columns of a DFM are any unit on which you can aggregate features

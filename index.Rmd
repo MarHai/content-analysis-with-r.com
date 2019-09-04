@@ -1,63 +1,54 @@
 ---
-title: "Automatisierte Inhaltsanalyse mit R"
-author: "Cornelius Puschmann"
-subtitle: Inhalt
-output: html_notebook
+title: "Automated Content Analysis with R"
+author: "Cornelius Puschmann & Mario Haim"
+output: html_document
 ---
 
-<!---
-* pdf-version vorbereiten
-* literatur hinzufügen
-* korpus-beschreibung hinzufügen (enron, schweizer vorlagen)
--->
+Welcome to this beginner's guide into automated content analysis with R. This guide is a fork to the seminal yet German version of [inhaltsanalyse-mit-r.de](http://inhaltsanalyse-mit-r.de) by [Cornelius Puschmann](http://cbpuschmann.net/) and is maintained by both Cornelius and [Mario Haim](https://haim.it).
 
-Diese Einführung gliedert sich in neun inhaltliche Kapitel, in denen wesentliche Ansätze der automatisierten Inhaltsanalyse mit R anhand von zahlreichen Beispielen vorgestellt werden. Dabei werden sog. R-Notebooks verwendet, die eine Kombination aus Erläuterungen und R-Code enthalten, welcher gemeinsam mit den hier abrufbaren Korpora und weiteren Ressourcen ausgeführt und beliebig angepasst werden kann. Die aktuellste (Entwicklungs-)Fassung der R-Notebooks findet sich auf [GitHub](https://github.com/cbpuschmann/inhaltsanalyse-mit-r.de), eine zusätzliche Leseversion ist auch auf [rpubs.com](https://rpubs.com/cbpuschmann/AIR1) abrufbar.
+Currently, this guide is divided into nine chapters, in which essential approaches to automated content analysis with R are presented on the basis of numerous examples. So-called R notebooks are used, containing a combination of explanations and R code, which can be executed and adapted together with the provided corpora and other resources. The latest (development) version of the R Notebooks can be found at [GitHub](https://github.com/MarHai/content-analysis-with-r.com).
 
 
-### Inhalt
+### Table of Contents
 
 
-0. [Einleitung](einleitung.html)
-1. [Grundlagen von quanteda](grundlagen.html)
-2. [Wort- und Textmetriken](metriken.html)
-3. [Sentimentanalyse](sentiment.html)
-4. [themenspezifische Lexika](lexika.html)
-5. [überwachtes maschinelles Lernen](maschinelles_lernen.html)
-6. [Themenmodelle](themenmodelle.html)
-7. [Tagging, Parsing und Entitätenerkennung](ner.html)
-8. [Texte und Wörter als Netzwerke](netzwerke.html)
-9. [Datenimport](datenimport.html)
+0. [Introduction](0-introduction.html)
+1. [quanteda basics](1-basics.html)
+2. [Word and text metrics](2-metrics.html)
+3. [Sentiment analysis](3-sentiment.html)
+4. [Topic-specific dictionaries](4-dictionaries.html)
+5. [Supervised machine learning](5-machine_learning.html)
+6. [Topic modeling](6-topic_models.html)
+7. [Tagging, parsing, and entity recognition](7-ner.html)
+8. [Words and texts as networks](8-networks.html)
+9. [Data import](9-data_import.html)
 
 
-### Downloads
+### Download
 
-**Sämtliche in dieser Einführung verwendeten R-Notebooks, Korpora und Lexika und können [hier](inhaltsanalyse_mit_r.zip) heruntergeladen werden.** Ebenfalls herunterladbar ist [eine PDF-Version](inhaltsanalyse_mit_r.pdf) dieser Website.
-
-
-### R-Pakete
-
-Die wichtigste technische Grundlage dieser Einführung liefert das Paket [quanteda](https://quanteda.io/), entwickelt von [Ken Benoit](http://kenbenoit.net/) und Kollegen, welches eine umfangreiche Basisinfrastruktur für die Analyse von Textdaten in [R](https://www.r-project.org/) darstellt. Mit quanteda [liest man Textdaten ein, legt man Korpora an, zählt man Wörter und wendet Lexika auf Daten an](https://tutorials.quanteda.io/). Damit ist quanteda deutlich umfangreicher als die meisten vergleichbaren Pakete und eher ein vollumfängliches Textmining-Framework. Äquivalent mit Blick auf die Funktionalität sind allenfalls die Pakete [tm](https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf) und (begrenzt) [tidytext](https://cran.r-project.org/web/packages/tidytext/vignettes/tidytext.html). Im Vergleich zu tm ist quanteda zwar jünger, zeichnet sich aber durch einen großen Funktionsumfang, sehr gute Performance, und eine exzellente Dokumentation aus. Tatsächlich sind zahlreiche hier vorgestellte Beispiele direkt der quanteda-Dokumentation entnommen, die allerdings häufig etwas gegenüber dem Paket selbst hinterherhinkt. 
-
-Weitere Pakete werden in dieser Einführung für spezialisierte Aufgaben verwendet, die quanteda nicht abdeckt. Dazu gehört das überwachte maschinelle Lernen (Kapitel 5) genauso wie sogenannte Themenmodelle (Kapitel 6) und Tagging/Parsing (Kapitel 7). Für den ersten Punkt setzen wir die Pakete [topicmodels](https://cran.r-project.org/web/packages/topicmodels/vignettes/topicmodels.pdf) und [stm](https://www.structuraltopicmodel.com/) ein, für den zweiten Punkt wird das Paket [RTextTools](http://www.rtexttools.com/) herangezogen, und für die linguistische Annotation spielen u.a. [udpipe](https://cran.r-project.org/package=udpipe) und [spacyr](https://github.com/quanteda/spacyr) eine Rolle. 
+You may download any R notebooks, corpora, dictionaries, and other resources used in this guide as [one large ZIP file](https://github.com/MarHai/content-analysis-with-r.com/archive/master.zip).
 
 
-Schließlich arbeiten wir intensiv mit den Paketen des [tidyverse](https://www.tidyverse.org/), die gemeinsam so etwas wie den großangelegten Versuch des neuseeländischen Statistikers [Hadley Wickham](https://en.wikipedia.org/wiki/Hadley_Wickham) darstellen, R trotz zahlreicher nicht unwesentlicher syntaktischer Idiosynkratien und Leistungsprobleme zu einer führenenden Sprache im Bereich der Datenwissenschaft zu machen. Wer sich einmal an die Logik von [tidyr](https://tidyr.tidyverse.org/), [dplyr](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html) und [ggplot](https://en.wikipedia.org/wiki/Ggplot2) gewöhnt hat, möchte sie für gewöhnlich nicht mehr missen, auch wenn der Weg dorthin mitunter beschwerlich sein kann, etwa weil die spezielle Syntax nicht jedermanns Sache ist. Eine essentielle Einführung in das tidyverse ist das Buch [R for Data Science](http://r4ds.had.co.nz/) von Garrett Grolemund und Hadley Wickham.
+### R packages
 
+This guide's most important foundation is the R package [quanteda](https://quanteda.io/), which has been developed by [Ken Benoit](http://kenbenoit.net/) and colleagues. It includes a sophisticated infrastructure for the analyses of texts in [R](https://www.r-project.org/). Using quanteda, you can easily [import text data, create corpora, count words, and even use dictionaries](https://tutorials.quanteda.io/), making quanteda considerably more extensive than comparable packages. Comparatively broad packages include [tm](https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf) and (to some extent) [tidytext](https://cran.r-project.org/web/packages/tidytext/vignettes/tidytext.html); however, in contrast to tm, quanteda is both younger and faster, provides a huge variety of functions, and has an excellent documentation. Importantly, quite a few examples discussed here are taken directly from the quanteda documentation.
 
-### Korpora
+Other packages used in this guide are dependent on the specific chapter. FOr example, in the chapter on [supervised machine learning](5-machine_learning.html), we will be using [RTextTools](http://www.rtexttools.com/). For [topic modelling](6-topic_models.html), we will build on the packages [topicmodels](https://cran.r-project.org/web/packages/topicmodels/vignettes/topicmodels.pdf) and [stm](https://www.structuraltopicmodel.com/). Ultimately, for [tagging, parsing, and entity recognition](7-ner.html), we need tools for linguistic annotation, which are provided, among others, by [udpipe](https://cran.r-project.org/package=udpipe) and [spacyr](https://github.com/quanteda/spacyr).
 
-Wir verwenden in dieser Einführung insgesamt elf unterschiedlich Korpora, anhand derer die vorgestellten Methoden anschaulich gemacht werden sollen. Bewusst unterscheiden sich die Daten in Bezug auf Sprache, Genre, Medium, Struktur und Umfang sehr deutlich. Von Social Media-Daten aus Facebook und Twitter und Unternehmens-Emails, über Pressetexte (in Auszügen) aus Deutschland, der Schweiz und den USA, bis hin zu politischen Reden, Parlamentsdebatten und Petitionen ist eine große Bandbreite an Textsorten und Kontexten vertreten. Einige Korpora, etwa das Sherlock-Holmes-Korpus, sind primär wegen ihrer Anschaulichkeit und (durch vergleichsweise geringe Größe) gute Handhabbarkeit ausgewählt worden, und weniger deshalb, weil ihnen große sozialwissenschaftliche Relevanz unterstellt wird. Zudem sind die Daten gemeinfrei, d.h. das Urheberrecht ist entweder erloschen oder schützt den Inhalt nicht (im Fall von Tweets oder Kommentaren). Im Korpus der Facebook-Kommentare sind bewusst keinelei Metadaten enthalten, um die Privatsphäre der Autoren so gut möglich zu schützen. Vom Sherlock Holmes-Korpus und den Enron-Emails abgesehen sind die Daten ausgesprochen aktuell.
+Finally, we will be making great use of the great [tidyverse](https://www.tidyverse.org/) packages. The tidyverse (as in "universe") is a project by New Zealand statistician [Hadley Wickham](https://en.wikipedia.org/wiki/Hadley_Wickham) to turn R into the leading data-science programming language (despite numerous syntactic and performance challenges). If you are new to the tidyverse, it may be a bit harsh to understand in the first place but trust us, it's worth it. And once you got the gist of, for example, [tidyr](https://tidyr.tidyverse.org/), [dplyr](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html), or [ggplot](https://en.wikipedia.org/wiki/Ggplot2), you do not want to miss them anymore. The must-read introduction to the tidyverse, by the way, is the open-source book [R for Data Science](http://r4ds.had.co.nz/) by Garrett Grolemund and Hadley Wickham himself.
 
-Korpus | Beschreibung | Texte | Wörter | Genre|Sprache|Quelle|Kapitel|
------- | -------------|-------|--------|------|--------|------|------|
-Sherlock Holmes|Detektiv-Erzählungen von Arthur Conan Doyle|12|126.804|Literatur|en|archive.org|x|
-Twitter|Tweets von Donald Trump und Hillary Clinton im US-Präsidentschaftswahlkampf 2016|18.826|458.764|Social Media|en|[trumptwitterarchive.com](https://github.com/bpb27/trump-tweet-archive) eigene Sammlung|x|
-Finanzkrise|Artikel aus fünf Schweizer Tageszeitungen mit dem Schlagwort 'Finanzkrise'|21.280|3.989.262|Presse|de|[COSMAS](https://www.ids-mannheim.de/cosmas2/)|x|
-Bundestag|Transkripte der Plenardebatte des 18. Deutschen Bundestags (2013-2017)|205.584|15.296.742|Politik|de|[offenenesparlament.de](https://offenesparlament.de/daten/)|x|
-EU|EUSpeech-Korpus aus Reden europäischer Politiker (national/EU) zwischen 2007 und 2015|17.505|14.279.385|Poltik|en|[Schumacher et al, 2016](https://doi.org/10.7910/DVN/XPCVEI)|x|
-UN|United Nations General Debate Corpus aus Transkripten der jährlichen UN-Generaldebatte nach Land, 1970-2017|7.897|24.420.083|Politik|en|[Mikhaylov et al, 2017](https://doi.org/10.7910/DVN/0TJX8Y)|x|
-Facebook|Zufallssample aus Kommentaren von sechs öffentlichen deutschsprachigen Facebook-Seiten, geposted zwischen 2015-2016|20.000|1.054.477|Social Media|de|eigene Sammlung|x|
-Die Zeit|Zufallssample von zwischen 2011 und 2016 veröffentlichten Nachrichtenbeiträgen|377|195.734|Presse|de|eigene Sammlung|x|
-New York Times|Inhaltanalyse von Beiträgen aus der New York Times zu dem Projekt 'Making the News' (1996-2006)|30.862|215.275|Presse|en|[Boydstun, 2013](http://www.amber-boydstun.com/supplementary-information-for-making-the-news.html)|x|
-Enron|Enron Email-Datensatz|341.071|178.908.873|Wirtschaft|en|[Klimt & Yang, 2004](https://doi.org/10.1007/978-3-540-30115-8_22)|x|
+### Corpora
 
+A corpus (or, plural, corpora) is a body of text to be analyzed. We will be using a wide variety of corpora throughout this guide. While you might find the consistent use of one corpus more plausible for an introductionary guide, we decided thoughtfully on using a multitude of corpora, which are distinct in their language, beat, news outlets, structure, and also volume. By building on social-media data, emails, press releases, political talks, petitions, and other sorts of texts, you will get a broad overview of these distinct types and their capabilities. Some corpora, such as the Sherlock Holmes corpus, are included because of their ease of use, others, such as the EUspeech corpus, are employed because of their relevance for social-scientific research. Importantly, the corpora are free to use; this is because copyright has either expired or does not protect the content (for example, for Tweets or comments).
+
+Corpus | Description | Texts | Words | Genre | Language | Source | Chapter |
+--- | --- | --- | --- | --- | --- | --- | --- |
+Sherlock Holmes | Detective novels by Arthur Conan Doyle | 12 | 126.804 | Literature | en | archive.org | [1](1-basics.html), [2](2-metrics.html), [3](3-sentiment.html), [6](6-topic_models.html) |
+Twitter | Tweets by Donald Trump and Hillary Clinton during the US POTUS campaign 2016 | 18.826 | 458.764 | Social Media | en | [trumptwitterarchive.com](https://github.com/bpb27/trump-tweet-archive) own collection | [3](3-sentiment.html) |
+Finanzkrise | Articles from five Swiss daily newspapers, based on a keyword search for 'Finanzkrise' | 21.280 | 3.989.262 | Press | de | [COSMAS](https://www.ids-mannheim.de/cosmas2/) | [3](3-sentiment.html) |
+EU | Speeches of EU politicians 2007-2015 | 17.505 | 14.279.385 | Politics | en | [Schumacher et al, 2016](https://doi.org/10.7910/DVN/XPCVEI) | [4](4-dictionaries.html) |
+UN | Transcripts from the annual United Nations General Assembly debate 1970-2017 | 7.897 | 24.420.083 | Politics | en | [Mikhaylov et al, 2017](https://doi.org/10.7910/DVN/0TJX8Y) | [4](4-dictionaries.html), [6](6-topic_models.html) |
+Facebook | Random sample of comments from six public pages, posted 2015-2016 | 20.000 | 1.054.477 | Social Media | de | own collection | [4](4-dictionaries.html) |
+Die Zeit | Random sample of articles from Die ZEIT, published 2011 and 2016 | 377 | 195.734 | Press | de | own collection | [5](5-machine_learning.html), [6](6-topic_models.html) |
+New York Times | Articles from the New York Times as used in the 'Making the News' project (1996-2006) | 30.862 | 215.275 | Press | en | [Boydstun, 2013](http://www.amber-boydstun.com/supplementary-information-for-making-the-news.html) | [5](5-machine_learning.html) |
+Enron | Enron emails | 341.071 | 178.908.873 | Economy | en | [Klimt & Yang, 2004](https://doi.org/10.1007/978-3-540-30115-8_22) | - |

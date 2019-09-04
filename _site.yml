@@ -1,0 +1,23 @@
+name: "Automated Content Analysis with R"
+navbar:
+  title: "Automated Content Analysis with R"
+  left:
+    - text: "Intro"
+      href: 0-introduction.html
+    - text: "Basics"
+      href: 1-basics.html
+    - text: "Word and text metrics"
+      href: 2-metrics.html
+    - text: "Sentiment analysis"
+      href: 3-sentiment.html
+    - text: "Topic-specific dictionaries"
+      href: 4-dictionaries.html
+    - text: "Supervised machine learning"
+      href: 5-machine_learning.html
+    - text: "Topic modeling"
+      href: 6-topic_models.html
+output:
+  html_document:
+    df_print: paged
+    highlight: textmate
+output_dir: "dist"
