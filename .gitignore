@@ -1,6 +1,4 @@
-daten/
-lexika/
-website/
+dist/
 .Rproj.user/
 .Rhistory
 .DS_Store
@@ -12,3 +10,4 @@ website/
 *.key
 *.json
 .Rproj.user
+.RData

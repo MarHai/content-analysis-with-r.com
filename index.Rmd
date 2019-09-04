@@ -49,6 +49,5 @@ Finanzkrise | Articles from five Swiss daily newspapers, based on a keyword sear
 EU | Speeches of EU politicians 2007-2015 | 17.505 | 14.279.385 | Politics | en | [Schumacher et al, 2016](https://doi.org/10.7910/DVN/XPCVEI) | [4](4-dictionaries.html) |
 UN | Transcripts from the annual United Nations General Assembly debate 1970-2017 | 7.897 | 24.420.083 | Politics | en | [Mikhaylov et al, 2017](https://doi.org/10.7910/DVN/0TJX8Y) | [4](4-dictionaries.html), [6](6-topic_models.html) |
 Facebook | Random sample of comments from six public pages, posted 2015-2016 | 20.000 | 1.054.477 | Social Media | de | own collection | [4](4-dictionaries.html) |
-Die Zeit | Random sample of articles from Die ZEIT, published 2011 and 2016 | 377 | 195.734 | Press | de | own collection | [5](5-machine_learning.html), [6](6-topic_models.html) |
 New York Times | Articles from the New York Times as used in the 'Making the News' project (1996-2006) | 30.862 | 215.275 | Press | en | [Boydstun, 2013](http://www.amber-boydstun.com/supplementary-information-for-making-the-news.html) | [5](5-machine_learning.html) |
 Enron | Enron emails | 341.071 | 178.908.873 | Economy | en | [Klimt & Yang, 2004](https://doi.org/10.1007/978-3-540-30115-8_22) | - |
