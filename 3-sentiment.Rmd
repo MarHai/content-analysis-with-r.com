@@ -141,7 +141,13 @@ First, let's plot the words (or more precisely the tokens) per month for Hillary
 Attention: Here the color indicates the candidate, not the sentiment.
 
 ```{r Plot Twitter activity over time}
-ggplot(trumpclinton.stats.monthly, aes(as.Date(paste(Year, Month, "01", sep = "-")), Tweets, group = Candidate, col = Candidate)) + geom_line(size = 1) + scale_colour_brewer(palette = "Set1") + scale_x_date(date_breaks = "2 months", date_labels = "%b %Y") + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + xlab("month") + ggtitle("Trump vs. Clinton: Tweets per month (2015-2017)") + xlab("")
+ggplot(trumpclinton.stats.monthly, aes(as.Date(paste(Year, Month, "01", sep = "-")), Tweets, group = Candidate, col = Candidate)) + 
+  geom_line(size = 1) + 
+  scale_colour_brewer(palette = "Set1") + 
+  scale_x_date(date_breaks = "2 months", date_labels = "%b %Y") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ggtitle("Trump vs. Clinton: Tweets per month (2015-2017)") + 
+  xlab("")
 ```
 
 It can be observed that Hillary Clinton became much more active in the six months leading up to the November 2016 election, while Donald Trump, in direct comparison to his continued presence on Twitter since 2009, was rather less active. 

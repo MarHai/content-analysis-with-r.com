@@ -16,6 +16,8 @@ navbar:
       href: 5-machine_learning.html
     - text: "Topic modeling"
       href: 6-topic_models.html
+    - text: "Multiple languages"
+      href: 7-languages.html
 output:
   html_document:
     df_print: paged

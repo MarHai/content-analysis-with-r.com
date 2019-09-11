@@ -1,0 +1,215 @@
+---
+title: "Automated Content Analysis with R"
+author: "Cornelius Puschmann & Mario Haim"
+subtitle: "Working with different languages"
+---
+
+So far, we have worked with neatly prepared datasets. However, academic daily business is to work with somewhat more messy data as well. Importantly, a common challenge is to work with texts in a variety of languages. For example, think of news reports from different countries. Luckily, the commonly known providers of online dictionaries also provide API's to translate texts.
+
+- [DeepL](https://www.deepl.com/) is considered one of the best translation engines these days, yet the Germany-based company provides only a handful of latin-inspired languages, pricing contains a monthly fee (some 5€) plus on-demand charges, roughly equal to 20€ per 1mio. characters; registration for [DeepL API](https://www.deepl.com/pro.html#developer) required
+- [Google Translate](https://translate.google.com/), probably best known, provides a huge amount of languages at fixed pricing (i.e., free up to 500k characters per month, then starting at $20 per month for 1mio. characters); enable through the [Google API's Developer Console](https://console.developers.google.com/apis/library/translate.googleapis.com)
+- [Microsoft Translator](https://www.bing.com/translator) is roughly comparable to Google in providing a huge amount of languages, but applying a much more complex pricing model with free usage for up to 2mio. characters per month, then charging some $10 per 1mio. characters on demand but decreasing this charge for even higher (!) usage; for developers it's referred to as [Microsoft Azure Translator Text API](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/translator-text-api/)
+- [Yandex Translate](https://translate.yandex.com/) is a Russian alternative to the two US giants, roughly providing the same language variety at prices starting with $15 per 1mio. characters per month and discounts for higher usage; register at [Yandex Translate Developers](https://translate.yandex.com/developers)
+- as a more exceptional case, [IBM Watson's Language Translator](https://www.ibm.com/watson/services/language-translator/) is a business-to-business provider without a maintained online tool, translating a number of supposedly often requested languages (i.e., more than DeepL but significantly less than the others) at no costs for up to 1mio. characters per month, afterwards charging some $20 per 1mio. characters
+- finally, if you are working in public administration within the EU, you can also use the [EU Machine Translation for Public Administrations](https://ec.europa.eu/info/resources-partners/machine-translation-public-administrations-etranslation_en) which appearantly also offers an API at no costs while providing translations between [any official EU languages](http://europa.eu/european-union/topics/multilingualism_en)
+
+For the purpose of this demonstration, we will be using [Google Translate](https://translate.google.com/) within its free limits. We will do so also because there is an R package available providing access to Google's API's, namely [googleLanguageR](https://cran.r-project.org/web/packages/googleLanguageR/index.html). Hence, we'll start by installing that along with the usual suspects, tidyverse and quanteda.
+
+```{r, message = FALSE}
+if(!require("quanteda")) {install.packages("quanteda"); library("quanteda")}
+if(!require("tidyverse")) {install.packages("tidyverse"); library("tidyverse")}
+if(!require("googleLanguageR")) {install.packages("googleLanguageR"); library("googleLanguageR")}
+theme_set(theme_bw())
+```
+
+For all API's generlly but for the Google API specifically, one needs to register and retrieve some API authentication. This can be a "token" (a secret text, basically) or a pair of two secret parts of an "authenticator." Typically, during this process of registration, one also needs to provide credit-card information, even if working with the free volume only. At the [Google Developer Console](https://console.developers.google.com/apis/library/translate.googleapis.com), enable the Translation API, and create service-account credentials (whereby you need to enter a project name, grant access to the Translation API), which provides you with a downloadable key file in JSON format. Download it and put it into your R working diretory (sorry, we cannot provide you with one here).
+
+Google claims, by the way, not warn you and actually ask for you permission before really charging you. For those control maniacs out there (like me), though, you can also (regularly) check the [request monitor](https://console.cloud.google.com/apis/api/translate.googleapis.com/overview) about your current quota usage.
+
+After having the credential file available at a specific file location (for ease of use, we'll just assume the file location to be stored in the "credential.json" variable), we now need to tell [googleLanguageR](https://cran.r-project.org/web/packages/googleLanguageR/vignettes/setup.html) to use it for authentication against Google's API.
+
+```{r, echo=FALSE}
+credential.json <- 'data/api-research-235710-9d1c66c1ee93.json'
+```
+```{r}
+gl_auth(credential.json)
+```
+
+If this passes without errors, we are good to go. That is, we can use the API to [detect the language](https://cloud.google.com/translate/docs/reference/rest/v2/detect) of a text. We'll demonstrate that with the first paragraph of the first Sherlock-Holmes novel.
+
+```{r}
+load("data/sherlock/sherlock.absaetze.RData")
+text <- sherlock.absaetze[[1, 'content']]
+
+gl_translate_detect(text)
+```
+
+The result is by no means surprising--it's English. What's more is that we are presented with a confidence indicator and an estimate whether the result actually "isReliable," both of which are deprecated though and will be removed in future versions of the API. Just focus on the "language" column.
+
+Of course, the main function is to actually [translate a text](https://cloud.google.com/translate/docs/reference/rest/v2/translate) it into one of the many provided languages. Aside from the text to be translated, you need to specify the target language. It is also recommendable to specify whether your text contains HTML or is simple plain text, although some preprocessing to remove unnecessary markup is advisable to reduce the number of characters to be translated (and thus charged for). If you know the text's current language, you can also specify that; if omited, Google will automatically try to detect it (see above) which might be added to your quoate usage.
+
+```{r}
+gl_translate(text, format = 'text', source = 'en', target = 'de')
+```
+
+As you can or probably cannot see, the translation is decent but certainly not perfect. This varies from language to language and also the aforementioned alternative API's provide differing results, but hey, it's automated large-scale text translation into a whole multitude of languages. In fact, for [Google Translate](https://cloud.google.com/translate/docs/languages) the package also provides us with an up-to-date list of what's possible.
+
+```{r}
+gl_translate_languages()
+```
+
+A final word on mass translation: You can easily use the API to translate a lot of texts at once (we will do so in a second), but the API has its limits also per call. While you now know that and can keep it in mind for other API's, our used package [googleLanguageR](https://cran.r-project.org/web/packages/googleLanguageR/googleLanguageR.pdf) automatically splits large portions of texts into separate API calls. While this should neither affect translation nor quota usage, it may be the cause for translations on a large scale to consume considerably more time. But you are already used to [long times for computational tasks](6-topic_models.html), anyhow ...
+
+
+## Integrating translation into sentiment analysis
+
+Let's assume we want to apply a dictionary, be it for sentiment or any topic-specific dictionary, to a corpus, but our dictionary's language and the corpus' language do not match. Specifically and for this example, we will build on the already well-known **english Bing Liu dictionary** and a **German news corpus** of roughly 21,000 articles published between 2007 and 2012 in various Swiss daily newspapers regarding the financial crisis (applying the search query "Finanzkrise").
+
+We will first load both elements and also draw a sample from the corpus in order to to overstrain the API limits.
+
+```{r}
+positive.words.bl <- scan("dictionaries/bingliu/positive-words.txt", what = "char", sep = "\n", skip = 35, quiet = T)
+negative.words.bl <- scan("dictionaries/bingliu/negative-words.txt", what = "char", sep = "\n", skip = 35, quiet = T)
+sentiment.dict.en <- dictionary(list(positive = positive.words.bl, negative = negative.words.bl))
+
+load("data/finanzkrise.korpus.RData")
+crisis.sample <- corpus_sample(korpus.finanzkrise, 20)
+crisis.sample
+```
+
+Essentially, now, we have three options in order to sentiment-analyze our data:
+
+1. Translate our German corpus and apply the original Bing Liu dictionary
+2. Translate the English words in the dictionary and apply to the original corpus
+3. Search for a German dictionary (yes, this sounds like a bad joke at this point, but given the wide availability of dictionaries, this is to be seriously considered)
+
+### 1. Translate our German corpus and apply the original Bing Liu dictionary
+
+For this we need to push our current corpus to Google's API and store the result. Since some of the texts include a tiny little bit of HTML, we specify the format as such.
+
+```{r}
+translations <- gl_translate(crisis.sample$documents$texts, format = 'html', source = 'de', target = 'en')
+translations
+crisis.sample.translated <- crisis.sample
+crisis.sample.translated$documents$texts <- translations$translatedText
+```
+
+The fourth line writes the translated results back into the (copied) corpus, to which we can now simply apply the Bing Liu dictionary.
+
+```{r}
+dfm.sentiment.translatedcorpus <- 
+  crisis.sample.translated %>% 
+  dfm(dictionary = sentiment.dict.en) %>% 
+  dfm_weight(scheme = "prop")
+dfm.sentiment.translatedcorpus
+```
+
+We can see a bit of sentiment detection in all texts so our procedure worked in essence. But how good is this procedure? Well, we need comparative research for that ... 
+
+### 2. Translate the English words in the dictionary and apply to the original corpus
+
+Instead of translating the texts, we could also translate the Bing Liu dictionary. For that, we need to translate both lists of words (i.e., positive and negative ones) from their current language, English, into German. Now, this takes a while--mainly because googleLanguageR splits our almost 7000 words into a lot of different API calls. Hence, we do not run these commands here but instead load the already translated lists.
+
+```{r}
+#positive.translations <- gl_translate(positive.words.bl, format = 'text', source = 'en', target = 'de')
+#negative.translations <- gl_translate(negative.words.bl, format = 'text', source = 'en', target = 'de')
+load('data/bl_translated.RData')
+sentiment.dict.en.de <- dictionary(list(positive = positive.translations$translatedText, negative = negative.translations$translatedText))
+```
+
+Once this is done, we can apply this newly translated dictionary to our original texts.
+
+```{r}
+dfm.sentiment.translateddict <- 
+  crisis.sample %>% 
+  dfm(dictionary = sentiment.dict.en.de) %>% 
+  dfm_weight(scheme = "prop")
+dfm.sentiment.translateddict
+```
+
+Is it different from our result before? Let's compare visually.
+
+```{r}
+dfm.sentiment.translatedcorpus %>% 
+  convert('data.frame') %>% 
+  gather(positive, negative, key = "Polarity", value = "Sentiment") %>% 
+  mutate(Type = 'translated corpus and Bing Liu') %>% 
+  bind_rows(
+    dfm.sentiment.translateddict %>% 
+      convert('data.frame') %>% 
+      gather(positive, negative, key = 'Polarity', value = 'Sentiment') %>% 
+      mutate(Type = 'translated Bing Liu')
+  ) %>% 
+  ggplot(aes(document, Sentiment, fill = Polarity)) + 
+    geom_bar(stat="identity") + 
+    scale_colour_brewer(palette = "Set1") + 
+    ggtitle("Sentiment scores in news reports on the financial crisis in Swiss newspapers") + 
+    xlab("") + 
+    ylab("Sentiment share (%)") + 
+    facet_grid(rows = vars(Type)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Based on our small 20-case sample, results are pretty similar. One notable difference, though, is that in this second approach we only translate the dictionary once, no matter if we have 20 or 20 million news reports. Translation costs may thus be cheaper.
+
+### 3. Search for a German dictionary
+
+This is the most straightforward way. We just need a dictionary and repeat what we are well used to already. For the dictionary, we will use the [SentiWS](http://wortschatz.uni-leipzig.de/de/download#sentiWSDownload) dictionary, which here is available as RData file.
+
+```{r}
+load("dictionaries/sentiWS.RData")
+sentiment.dict.de <- dictionary(list(positive = positive.woerter.senti, negative = negative.woerter.senti))
+```
+
+And then it's business as usual:
+
+```{r}
+dfm.sentiment.germandict <- 
+  crisis.sample %>% 
+  dfm(dictionary = sentiment.dict.de) %>% 
+  dfm_weight(scheme = "prop")
+dfm.sentiment.germandict
+```
+
+This way seems the most natural one as speakers of the German language have coded words as positive or negative. Double meanings available in one but not another language (for example, the word "home" is neither on Bing Liu's positive nor negative list; translated to German, though, it might either result in "zuhause," an equally neutral term, or the rather emotion-laden term "heimat") are captured only in this approach for both languages.
+
+But let's compare all three translation enquiries with each other.
+
+```{r}
+dfm.sentiment.translatedcorpus %>% 
+  convert('data.frame') %>% 
+  gather(positive, negative, key = "Polarity", value = "Sentiment") %>% 
+  mutate(Type = 'translated corpus, original Bing Liu') %>% 
+  bind_rows(
+    dfm.sentiment.translateddict %>% 
+      convert('data.frame') %>% 
+      gather(positive, negative, key = 'Polarity', value = 'Sentiment') %>% 
+      mutate(Type = 'original corpus, translated Bing Liu')
+  ) %>% 
+  bind_rows(
+    dfm.sentiment.germandict %>% 
+      convert('data.frame') %>% 
+      gather(positive, negative, key = 'Polarity', value = 'Sentiment') %>% 
+      mutate(Type = 'original corpus, original SentiWS')
+  ) %>% 
+  ggplot(aes(document, Sentiment, fill = Polarity)) + 
+    geom_bar(stat="identity") + 
+    scale_colour_brewer(palette = "Set1") + 
+    ggtitle("Sentiment scores in news reports on the financial crisis in Swiss newspapers") + 
+    xlab("") + 
+    ylab("Sentiment share (%)") + 
+    facet_grid(rows = vars(Type)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+We can conclude that in essence they all are pretty similar. The general trend of the articles is not far off. However, specific pieces are indeed coded differently, although we need to remind ourselves that we are looking at only 20 texts. Based on this small sample, though, we can conclude that all three approaches seem viable.
+
+## Things to remember when working with different languages
+
+The following characteristics of multiple-language corpora are worth bearing in mind:
+
+- automated API-based translation is widely available, easy to use, and relatively cheap
+- while original-language data seems intuitively better, translated versions work pretty well
+- if you do not have access to dictionaries in all languages, it might be "cheaper" to translate the dictionary rather than your large-scale corpus
+- oh, and please-please-please [validate, validate, validate](https://web.stanford.edu/~jgrimmer/tad2.pdf)
+

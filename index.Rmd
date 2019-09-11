@@ -19,9 +19,10 @@ Currently, this guide is divided into nine chapters, in which essential approach
 4. [Topic-specific dictionaries](4-dictionaries.html)
 5. [Supervised machine learning](5-machine_learning.html)
 6. [Topic modeling](6-topic_models.html)
-7. [Tagging, parsing, and entity recognition](7-ner.html)
-8. [Words and texts as networks](8-networks.html)
-9. [Data import](9-data_import.html)
+7. [Multiple languages](7-multiple_languages.html)
+<!-- 7. [Tagging, parsing, and entity recognition](7-ner.html) -->
+<!-- 8. [Words and texts as networks](8-networks.html) -->
+<!-- 9. [Data import](9-data_import.html) -->
 
 
 ### Download
